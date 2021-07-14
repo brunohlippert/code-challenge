@@ -1,67 +1,35 @@
 import { useEffect, useState } from 'react';
 
-const data = [
-  {
-    id: '1',
-    name: 'Pilsner',
-    minimumTemperature: 4,
-    maximumTemperature: 6,
-  },
-  {
-    id: '2',
-    name: 'IPA',
-    minimumTemperature: 5,
-    maximumTemperature: 6,
-  },
-  {
-    id: '3',
-    name: 'Lager',
-    minimumTemperature: 4,
-    maximumTemperature: 7,
-  },
-  {
-    id: '4',
-    name: 'Stout',
-    minimumTemperature: 6,
-    maximumTemperature: 8,
-  },
-  {
-    id: '5',
-    name: 'Wheat beer',
-    minimumTemperature: 3,
-    maximumTemperature: 5,
-  },
-  {
-    id: '6',
-    name: 'Pale Ale',
-    minimumTemperature: 4,
-    maximumTemperature: 6,
-  },
-];
-
 function App() {
   const [items, setItems] = useState({});
 
   useEffect(() => {
-    const request = () =>
-      data.forEach((product) => {
-        fetch(`http://localhost:8081/temperature/${product.id}`)
-          .then((response) => response.json())
-          .then((response) =>
-            setItems((prevItems) => ({
-              ...prevItems,
-              [product.id]: {
-                ...product,
-                ...response,
-              },
-            }))
-          );
-      });
-
-    setInterval(request, 5000);
-
+    const request = () => fetchTemperatureDate();
     request();
+    setInterval(request, 5000);    
   }, []);
+
+  function fetchTemperatureDate() {
+    fetch(`http://localhost:8081/temperatures/`)
+      .then((response) => response.json())
+      .then((response) =>
+        setItems(() => ({
+          ...response
+        }))
+      );
+  }
+
+  function getTemperatureStatus(temp, max, min) {
+    if (temp == undefined) {
+      return "NO DATA";
+    } else if (temp < min) {
+      return "too low";
+    } else if (temp > max) {
+      return "too high";
+    } else {
+      return "all good";
+    }
+  }
 
   return (
     <div className="App">
@@ -77,17 +45,10 @@ function App() {
         <tbody>
           {Object.keys(items).map((itemKey) => (
             <tr key={items[itemKey].id}>
-              <td width={150}>{items[itemKey].name}</td>
-              <td width={150}>{items[itemKey].temperature}</td>
+              <td data-testid="name" width={150}>{items[itemKey].name}</td>
+              <td data-testid="temperature" width={150}>{items[itemKey].temperature}</td>
               <td width={150}>
-                {items[itemKey].temperature <
-                  items[itemKey].minimumTemperature && <span>too low</span>}
-                {items[itemKey].temperature >
-                  items[itemKey].maximumTemperature && <span>too high</span>}
-                {items[itemKey].temperature <=
-                  items[itemKey].maximumTemperature &&
-                  items[itemKey].temperature >=
-                    items[itemKey].minimumTemperature && <span>all good</span>}
+                <span data-testid="status">{getTemperatureStatus(items[itemKey].temperature, items[itemKey].maximumTemperature, items[itemKey].minimumTemperature)}</span>
               </td>
             </tr>
           ))}
